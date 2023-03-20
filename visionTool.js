@@ -31,18 +31,16 @@ export function setupContextMenus() {
       },
     ],
     async onClick(ctx) {
-      Promise.all(
-        OBR.scene.items.updateItems(ctx.items, items => {
-          for (const item of items) {
-            if (item.metadata[`${ID}/hasVision`] && item.layer == "CHARACTER") {
-              delete item.metadata[`${ID}/hasVision`];
-            }
-            else if (item.layer == "CHARACTER"){
-              item.metadata[`${ID}/hasVision`] = true;
-            }
+      OBR.scene.items.updateItems(ctx.items, items => {
+        for (const item of items) {
+          if (item.metadata[`${ID}/hasVision`] && item.layer == "CHARACTER") {
+            delete item.metadata[`${ID}/hasVision`];
           }
-        }),
-      );
+          else if (item.layer == "CHARACTER"){
+            item.metadata[`${ID}/hasVision`] = true;
+          }
+        }
+      })
     },
   });
 
