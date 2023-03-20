@@ -183,6 +183,7 @@ async function computeShadow(event) {
     allItems, 
     metadata, 
     size, 
+    offset,
     visionShapes, 
     playersWithVision, 
     invalidateCache, 
@@ -209,8 +210,8 @@ async function computeShadow(event) {
   for (const shape of visionShapes) {
     for (let i = 0; i < shape.points.length-1; i++) {
       visionLines.push({
-        startPosition: {x: shape.points[i].x, y: shape.points[i].y},
-        endPosition: {x: shape.points[i+1].x, y: shape.points[i+1].y},
+        startPosition: {x: shape.points[i].x + offset[0], y: shape.points[i].y + offset[1]},
+        endPosition: {x: shape.points[i+1].x + offset[0], y: shape.points[i+1].y + offset[1]},
         originalShape: shape,
       });
     }
@@ -239,14 +240,14 @@ async function computeShadow(event) {
       //! This is probably not required if we later compute the intersection
       //! (using PathKit) of these polygons with a base rectangle the size of
       //! our background image
-      if (v1.x < 0) xlim1 = 0;
-      else xlim1 = width;
-      if (v1.y < 0) ylim1 = 0;
-      else ylim1 = height;
-      if (v2.x < 0) xlim2 = 0;
-      else xlim2 = width;
-      if (v2.y < 0) ylim2 = 0;
-      else ylim2 = height;
+      if (v1.x < 0) xlim1 = offset[0];
+      else xlim1 = width + offset[0];
+      if (v1.y < 0) ylim1 = offset[1];
+      else ylim1 = height + offset[1];
+      if (v2.x < 0) xlim2 = offset[0];
+      else xlim2 = width + offset[0];
+      if (v2.y < 0) ylim2 = offset[1];
+      else ylim2 = height + offset[1];
       
       const options1 = [], options2 = [];
       if (v1.x != 0) {
@@ -271,14 +272,14 @@ async function computeShadow(event) {
       }
       
       if (options1.length == 1 || squareDistance(options1[0], line.startPosition) < squareDistance(options1[1], line.startPosition))
-      proj1 = options1[0];
+        proj1 = options1[0];
       else
-      proj1 = options1[1];
+        proj1 = options1[1];
       
       if (options2.length == 1 || squareDistance(options2[0], line.endPosition) < squareDistance(options2[1], line.endPosition))
-      proj2 = options2[0];
+        proj2 = options2[0];
       else
-      proj2 = options2[1];
+        proj2 = options2[1];
       
       polygons[polygons.length-1].push({pointset: [
         {x: line.startPosition.x, y: line.startPosition.y},
@@ -324,9 +325,9 @@ async function computeShadow(event) {
 
       if (shape.style.closed != false) {
         const shapePath = PathKit.NewPath();
-        shapePath.moveTo(shape.points[0].x, shape.points[0].y);
+        shapePath.moveTo(shape.points[0].x + offset[0], shape.points[0].y + offset[1]);
         for (let i = 1; i < shape.points.length-1; i++)
-          shapePath.lineTo(shape.points[i].x, shape.points[i].y);
+          shapePath.lineTo(shape.points[i].x + offset[0], shape.points[i].y + offset[1]);
         newPath.op(shapePath, PathKit.PathOp.DIFFERENCE);
         shapePath.delete();
       }
@@ -359,7 +360,7 @@ async function computeShadow(event) {
 
   if (visionRange) {
     // Create vision circles that cut a fog rectangle in a lower layer
-    const backgroundFog = PathKit.NewPath().rect(0, 0, size[0], size[1]);
+    const backgroundFog = PathKit.NewPath().rect(offset[0], offset[1], size[0], size[1]);
     const playerVision = PathKit.NewPath();
     for (const player of playersWithVision) {
         const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
@@ -425,6 +426,7 @@ export async function mainVisionLoop() {
 
   const dpiRatio = dpi / backgroundImage.grid.dpi;
   const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
+  const offset = [backgroundImage.position.x, backgroundImage.position.y];
   document.getElementById("vision_size").innerText = `${size[0]}x${Math.round(size[1])} px`;
 
   const visionRange = metadata[`${ID}/playerVisionRange`];
@@ -457,6 +459,7 @@ export async function mainVisionLoop() {
       allItems: allItems,
       metadata: metadata,
       size: size,
+      offset: offset,
       playersWithVision: playersWithVision,
       visionShapes: visionShapes,
       invalidateCache: invalidateCache,
