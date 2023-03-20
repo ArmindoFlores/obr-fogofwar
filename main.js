@@ -1,8 +1,8 @@
 import "./style.css";
 import OBR from "@owlbear-rodeo/sdk";
-import { ID, VISION_LOOP_UPDATE_FREQUENCY } from './constants';
+import { ID, sceneCache } from './globals';
 import { isBackgroundImage }  from './itemFilters';
-import { setupContextMenus, createActions, createMode, createTool, mainVisionLoop } from './visionTool';
+import { setupContextMenus, createActions, createMode, createTool, onSceneDataChange } from './visionTool';
 
 // Create the extension page
 document.querySelector('#app').innerHTML = `
@@ -73,7 +73,7 @@ async function setButtonHandler() {
 
 // Setup extension add-ons
 OBR.onReady(() => {
-  OBR.player.getRole().then(value => {
+  OBR.player.getRole().then(async value => {
     // But only if user is the GM
     if (value == "GM") {
       setButtonHandler();
@@ -81,7 +81,33 @@ OBR.onReady(() => {
       createTool();
       createMode();
       createActions();
-      setInterval(mainVisionLoop, VISION_LOOP_UPDATE_FREQUENCY);
+      
+      sceneCache.items = await OBR.scene.items.getItems();
+      sceneCache.metadata = await OBR.scene.getMetadata();
+      sceneCache.gridDpi = await OBR.scene.grid.getDpi();
+      sceneCache.gridScale = await OBR.scene.grid.getScale();
+      [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale] = await Promise.all([
+        OBR.scene.items.getItems(),
+        OBR.scene.getMetadata(),
+        OBR.scene.grid.getDpi(),
+        OBR.scene.grid.getScale(),
+      ]);
+
+      OBR.scene.items.onChange(items => {
+        sceneCache.items = items;
+        onSceneDataChange();
+      });
+
+      OBR.scene.grid.onChange(grid => {
+        sceneCache.gridDpi = grid.dpi;
+        sceneCache.gridScale = parseInt(grid.scale);
+        onSceneDataChange();
+      });
+
+      OBR.scene.onMetadataChange(metadata => {
+        sceneCache.metadata = metadata;
+        onSceneDataChange();
+      });
     }
   }
   )

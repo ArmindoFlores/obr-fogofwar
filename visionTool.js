@@ -1,7 +1,7 @@
 import OBR, { buildPath } from "@owlbear-rodeo/sdk";
 import PathKitInit from "pathkit-wasm/bin/pathkit";
 import wasm from "pathkit-wasm/bin/pathkit.wasm?url";
-import { ID } from "./constants";
+import { ID, sceneCache } from "./globals";
 import { isBackgroundImage, isVisionFog, isVisionLine } from "./itemFilters";
 import { polygonMode } from "./visionPolygonMode";
 import { lineMode } from "./visionLineMode";
@@ -398,37 +398,31 @@ async function computeShadow(event) {
 document.addEventListener("updateVision", computeShadow)
 
 var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionRange;
-export async function mainVisionLoop() {
+export async function onSceneDataChange() {
   if (busy)
     return;
-  
+
   if (!(await OBR.scene.isReady()))
     return;
 
   const [awaitTimer, computeTimer] = [new Timer(), new Timer()];
-  awaitTimer.start();
+  
+  awaitTimer.start(); awaitTimer.pause();
+  computeTimer.start();
 
-  // Get all required values from OBR
-  const [allItems, metadata, dpi, gridScale] = await Promise.all([
-    await OBR.scene.items.getItems(),
-    await OBR.scene.getMetadata(),
-    await OBR.scene.grid.getDpi(),
-    await OBR.scene.grid.getScale(),
-  ]);
-  awaitTimer.pause(); computeTimer.start();
-  const playersWithVision = allItems.filter(item => item.metadata[`${ID}/hasVision`]);
-  const visionShapes = allItems.filter(isVisionLine);
-  const backgroundImage = allItems.filter(isBackgroundImage)?.[0];
+  const playersWithVision = sceneCache.items.filter(item => item.metadata[`${ID}/hasVision`]);
+  const visionShapes = sceneCache.items.filter(isVisionLine);
+  const backgroundImage = sceneCache.items.filter(isBackgroundImage)?.[0];
   if (backgroundImage === undefined)
     return;
 
-  const dpiRatio = dpi / backgroundImage.grid.dpi;
+  const dpiRatio = sceneCache.gridDpi / backgroundImage.grid.dpi;
   const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
   const offset = [backgroundImage.position.x, backgroundImage.position.y];
   document.getElementById("vision_size").innerText = `${size[0]}x${Math.round(size[1])} px`;
 
-  const visionRange = metadata[`${ID}/playerVisionRange`];
-  
+  const visionRange = sceneCache.metadata[`${ID}/playerVisionRange`];
+
   // Check if any values have changed and a re-draw is necessary
   const sVisionShapes = JSON.stringify(visionShapes);
   const sPlayersWithVision = JSON.stringify(playersWithVision);
@@ -447,21 +441,18 @@ export async function mainVisionLoop() {
   computeTimer.pause();
 
   // Fire an `updateVisionEvent` to launch the `computeShadow` function.
-  // The reason this is an event is to reduce the time this function is running.
-  // Unfortunately, a lot of time seems to still be spent communicating with the 
-  // OBR SDK
   const updateVisionEvent = new CustomEvent("updateVision", {
     detail: {
       awaitTimer: awaitTimer,
       computeTimer: computeTimer,
-      allItems: allItems,
-      metadata: metadata,
+      allItems: sceneCache.items,
+      metadata: sceneCache.metadata,
       size: size,
       offset: offset,
       playersWithVision: playersWithVision,
       visionShapes: visionShapes,
       invalidateCache: invalidateCache,
-      visionRange: visionRange ? dpi * (visionRange / gridScale.parsed.multiplier + .5) : 0,
+      visionRange: visionRange ? sceneCache.gridDpi * (visionRange / sceneCache.gridScale + .5) : 0,
     }
   });
 

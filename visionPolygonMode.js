@@ -1,5 +1,5 @@
 import OBR, { buildCurve } from "@owlbear-rodeo/sdk";
-const ID = "com.armindoflores.obrvision";
+import { ID } from "./globals";
 
 let interaction = null;
 async function onToolDoubleClick(context, event) {
