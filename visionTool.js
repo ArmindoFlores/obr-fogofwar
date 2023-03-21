@@ -16,7 +16,7 @@ export function setupContextMenus() {
     id: `${ID}/toggle-vision-menu`,
     icons: [
       {
-        icon: "/resources/icon.svg",
+        icon: "/resources/no-vision.svg",
         label: "Enable Vision",
         filter: {
           every: [{ key: "layer", value: "CHARACTER" }, { key: ["metadata", `${ID}/hasVision`], value: undefined}],
@@ -51,7 +51,7 @@ export function setupContextMenus() {
     id: `${ID}/set-background-image`,
     icons: [
       {
-        icon: "/resources/icon.svg", // most likely not the best icon
+        icon: "/resources/set-background.svg",
         label: "Set as background image",
         filter: {
           every: [{ key: "layer", value: "MAP" }, { key: ["metadata", `${ID}/isBackgroundImage`], value: undefined}],
@@ -91,29 +91,29 @@ export function createTool() {
 // This tool doesn't do what the name implies and will be removed
 export function createMode() {
     // Create "erase" mode
-    OBR.tool.createMode({
-      id: `${ID}/erase-vision-mode`,
-      icons: [
-        {
-          icon: "/resources/add.svg", // mismatched item
-          label: "Erase Vision",
-          filter: {
-            activeTools: [`${ID}/vision-tool`],
-          },
-        },
-      ],
-      async onClick() { 
-        console.log(await OBR.scene.items.getItems());
-       },
-    });
+    // OBR.tool.createMode({
+    //   id: `${ID}/erase-vision-mode`,
+    //   icons: [
+    //     {
+    //       icon: "/resources/add.svg", // mismatched item
+    //       label: "Erase Vision",
+    //       filter: {
+    //         activeTools: [`${ID}/vision-tool`],
+    //       },
+    //     },
+    //   ],
+    //   async onClick() { 
+    //     console.log(await OBR.scene.items.getItems());
+    //    },
+    // });
   
     // Create "add polygon" mode
     OBR.tool.createMode({
       id: `${ID}/add-vision-polygon-mode`,
       icons: [
         {
-          icon: "/resources/polygon.svg",
-          label: "Add Vision Polygon",
+          icon: "/resources/object.svg",
+          label: "Add Obstruction Object",
           filter: {
             activeTools: [`${ID}/vision-tool`],
           },
@@ -130,7 +130,7 @@ export function createMode() {
       icons: [
         {
           icon: "/resources/line.svg",
-          label: "Add Vision Line",
+          label: "Add Obstruction Line",
           filter: {
             activeTools: [`${ID}/vision-tool`],
           },
