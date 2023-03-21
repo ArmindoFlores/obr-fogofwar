@@ -52,6 +52,7 @@ async function onToolClick(_, event) {
     .fillColor("#000000")
     .strokeColor("#000000")
     .layer("DRAWING")
+    .name("Vision Line (Polygon)")
     .build();
     interaction = await OBR.interaction.startItemInteraction(polygon);
 

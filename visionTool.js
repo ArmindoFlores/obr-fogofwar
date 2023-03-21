@@ -2,7 +2,7 @@ import OBR, { buildPath } from "@owlbear-rodeo/sdk";
 import PathKitInit from "pathkit-wasm/bin/pathkit";
 import wasm from "pathkit-wasm/bin/pathkit.wasm?url";
 import { ID, sceneCache } from "./globals";
-import { isBackgroundImage, isVisionFog, isVisionLine } from "./itemFilters";
+import { isBackgroundImage, isVisionFog, isActiveVisionLine } from "./itemFilters";
 import { polygonMode } from "./visionPolygonMode";
 import { lineMode } from "./visionLineMode";
 import { squareDistance, comparePosition } from "./mathutils";
@@ -40,7 +40,7 @@ export function setupContextMenus() {
             item.metadata[`${ID}/hasVision`] = true;
           }
         }
-      })
+      });
     },
   });
 
@@ -68,6 +68,40 @@ export function setupContextMenus() {
             delete other_item.metadata[`${ID}/isBackgroundImage`];
           else
             other_item.metadata[`${ID}/isBackgroundImage`] = true;
+        }
+      });
+    }
+  });
+
+  // This context appears on vision lines and lets the user toggle whether
+  // they're active or not
+  OBR.contextMenu.create({
+    id: `${ID}/set-background-image`,
+    icons: [
+      {
+        icon: "/resources/icon.svg",
+        label: "Disable Vision Line",
+        filter: {
+          every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}, { key: ["metadata", `${ID}/disabled`], value: undefined}],
+        },
+      },
+      {
+        icon: "/resources/no-vision.svg",
+        label: "Enable Vision Line",
+        filter: {
+          every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}],
+        },
+      }
+    ],
+    onClick(ctx) {
+      OBR.scene.items.updateItems(ctx.items, items => {
+        for (const item of items) {
+          if (item.metadata[`${ID}/isVisionLine`] && item.metadata[`${ID}/disabled`]) {
+            delete item.metadata[`${ID}/disabled`];
+          }
+          else if (item.metadata[`${ID}/isVisionLine`]){
+            item.metadata[`${ID}/disabled`] = true;
+          }
         }
       });
     }
@@ -373,7 +407,7 @@ async function computeShadow(event) {
 
   // Update all items
   await Promise.all([
-    OBR.scene.items.updateItems(isVisionLine, items => {
+    OBR.scene.items.updateItems(isActiveVisionLine, items => {
       for (const item of items)
         item.zIndex = 2;
     }),
@@ -411,7 +445,7 @@ export async function onSceneDataChange() {
   computeTimer.start();
 
   const playersWithVision = sceneCache.items.filter(item => item.metadata[`${ID}/hasVision`]);
-  const visionShapes = sceneCache.items.filter(isVisionLine);
+  const visionShapes = sceneCache.items.filter(isActiveVisionLine);
   const backgroundImage = sceneCache.items.filter(isBackgroundImage)?.[0];
   if (backgroundImage === undefined)
     return;

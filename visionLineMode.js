@@ -51,6 +51,7 @@ async function onToolClick(_, event) {
       .fillColor("#000000")
       .fillOpacity(0)
       .layer("DRAWING")
+      .name("Vision Line (Line)")
       .closed(false)
       .build();
   
