@@ -68,7 +68,7 @@ async function setButtonHandler() {
     const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
     document.getElementById("vision_size").innerText = `${size[0]}x${Math.round(size[1])} px`;
   }
-  visionCheckbox.checked = metadata[`${ID}/visionEnabled`] === true;
+  visionCheckbox.checked = metadata[`${ID}/visionEnabled`] = true;
 }
 
 // Setup extension add-ons

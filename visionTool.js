@@ -182,6 +182,7 @@ async function computeShadow(event) {
     metadata, 
     size, 
     offset,
+    scale,
     visionShapes, 
     playersWithVision, 
     invalidateCache, 
@@ -208,8 +209,8 @@ async function computeShadow(event) {
   for (const shape of visionShapes) {
     for (let i = 0; i < shape.points.length-1; i++) {
       visionLines.push({
-        startPosition: {x: shape.points[i].x + offset[0], y: shape.points[i].y + offset[1]},
-        endPosition: {x: shape.points[i+1].x + offset[0], y: shape.points[i+1].y + offset[1]},
+        startPosition: {x: (shape.points[i].x * shape.scale.x + shape.position.x), y: (shape.points[i].y * shape.scale.y + shape.position.y)},
+        endPosition: {x: (shape.points[i+1].x * shape.scale.x + shape.position.x), y: (shape.points[i+1].y * shape.scale.y + shape.position.y)},
         originalShape: shape,
       });
     }
@@ -238,14 +239,14 @@ async function computeShadow(event) {
       //! This is probably not required if we later compute the intersection
       //! (using PathKit) of these polygons with a base rectangle the size of
       //! our background image
-      if (v1.x < 0) xlim1 = offset[0];
-      else xlim1 = width + offset[0];
-      if (v1.y < 0) ylim1 = offset[1];
-      else ylim1 = height + offset[1];
-      if (v2.x < 0) xlim2 = offset[0];
-      else xlim2 = width + offset[0];
-      if (v2.y < 0) ylim2 = offset[1];
-      else ylim2 = height + offset[1];
+      if (v1.x < 0) xlim1 = offset[0] * scale[0];
+      else xlim1 = (width + offset[0]) * scale[0];
+      if (v1.y < 0) ylim1 = offset[1] * scale[1];
+      else ylim1 = (height + offset[1]) * scale[1];
+      if (v2.x < 0) xlim2 = offset[0] * scale[0];
+      else xlim2 = (width + offset[0]) * scale[0];
+      if (v2.y < 0) ylim2 = offset[1] * scale[1];
+      else ylim2 = (height + offset[1]) * scale[1];
       
       const options1 = [], options2 = [];
       if (v1.x != 0) {
@@ -323,9 +324,9 @@ async function computeShadow(event) {
 
       if (shape.style.closed != false) {
         const shapePath = PathKit.NewPath();
-        shapePath.moveTo(shape.points[0].x + offset[0], shape.points[0].y + offset[1]);
+        shapePath.moveTo((shape.points[0].x + offset[0]) * scale[0], (shape.points[0].y + offset[1]) * scale[1]);
         for (let i = 1; i < shape.points.length-1; i++)
-          shapePath.lineTo(shape.points[i].x + offset[0], shape.points[i].y + offset[1]);
+          shapePath.lineTo((shape.points[i].x + offset[0]) * scale[0], (shape.points[i].y + offset[1]) * scale[1]);
         newPath.op(shapePath, PathKit.PathOp.DIFFERENCE);
         shapePath.delete();
       }
@@ -418,6 +419,7 @@ export async function onSceneDataChange() {
 
   const dpiRatio = sceneCache.gridDpi / backgroundImage.grid.dpi;
   const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
+  const scale = [backgroundImage.scale.x, backgroundImage.scale.y];
   const offset = [backgroundImage.position.x, backgroundImage.position.y];
   document.getElementById("vision_size").innerText = `${size[0]}x${Math.round(size[1])} px`;
 
@@ -449,6 +451,7 @@ export async function onSceneDataChange() {
       metadata: sceneCache.metadata,
       size: size,
       offset: offset,
+      scale: scale,
       playersWithVision: playersWithVision,
       visionShapes: visionShapes,
       invalidateCache: invalidateCache,
