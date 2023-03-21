@@ -363,6 +363,7 @@ async function computeShadow(event) {
     const playerVision = PathKit.NewPath();
     for (const player of playersWithVision) {
         const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
+        ellipse.op(playerShadowCache.getValue(player.id).shadowPath, PathKit.PathOp.DIFFERENCE);
         playerVision.op(ellipse, PathKit.PathOp.UNION);
         ellipse.delete();
       }
