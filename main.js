@@ -90,6 +90,13 @@ OBR.onReady(() => {
       ]);
       sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
 
+      let image = undefined;
+      if (sceneCache.items.filter(isBackgroundImage).length == 0) {
+        const images = sceneCache.items.filter(item => item.layer == "MAP" && item.type == "IMAGE");
+        const areas = images.map(image => image.image.width * image.image.height / Math.pow(image.grid.dpi, 2));
+        image = images[areas.indexOf(Math.max(...areas))];
+      }
+
       OBR.scene.items.onChange(items => {
         sceneCache.items = items;
         onSceneDataChange();
@@ -105,6 +112,12 @@ OBR.onReady(() => {
         sceneCache.metadata = metadata;
         onSceneDataChange();
       });
+
+      if (image !== undefined) {
+        await OBR.scene.items.updateItems([image], items => {
+          items[0].metadata[`${ID}/isBackgroundImage`] = true;
+        });
+      }
     }
   }
   )
