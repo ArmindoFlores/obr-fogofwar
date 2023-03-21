@@ -324,9 +324,9 @@ async function computeShadow(event) {
 
       if (shape.style.closed != false) {
         const shapePath = PathKit.NewPath();
-        shapePath.moveTo((shape.points[0].x + shape.position.x) * scale[0], (shape.points[0].y + shape.position.y) * scale[1]);
+        shapePath.moveTo(shape.points[0].x * shape.scale.x + shape.position.x, shape.points[0].y * shape.scale.y + shape.position.y);
         for (let i = 1; i < shape.points.length-1; i++)
-          shapePath.lineTo((shape.points[i].x + shape.position.x) * scale[0], (shape.points[i].y + shape.position.y) * scale[1]);
+          shapePath.lineTo(shape.points[i].x * shape.scale.x + shape.position.x, shape.points[i].y * shape.scale.y + shape.position.y);
         newPath.op(shapePath, PathKit.PathOp.DIFFERENCE);
         shapePath.delete();
       }
