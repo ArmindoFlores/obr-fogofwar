@@ -17,6 +17,7 @@ async function cancelDrawing() {
 
   const [_, stop] = interaction;
   stop();
+  interaction = null;
   cleanUpPopovers();  
 }
 
@@ -30,8 +31,10 @@ async function finishDrawing() {
     polygon.visible = false;
     polygon.metadata[`${ID}/isVisionLine`] = true;
     polygon.layer = "FOG";
+    polygon.points.pop();
   });
-  OBR.scene.items.addItems([polygon]);
+  if (polygon.points.length >= 3)
+    OBR.scene.items.addItems([polygon]);
   // Make sure we stop the interaction so others
   // can interact with our new polygon
   stop();
@@ -73,13 +76,13 @@ async function onToolClick(_, event) {
       .width(8)
       .height(8)
       .strokeWidth(2)
-      .position({x: event.pointerPosition.x, y: event.pointerPosition.y})
+      .position(event.pointerPosition)
       .layer("POPOVER")
       .visible(false)
       .build();
     const cancelLabel = buildLabel()
       .plainText("Cancel")
-      .position({x: event.pointerPosition.x, y: event.pointerPosition.y})
+      .position(event.pointerPosition)
       .layer("POPOVER")
       .pointerDirection("UP")
       .build(); 

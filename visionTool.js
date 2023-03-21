@@ -135,7 +135,6 @@ export function createMode() {
           },
         },
       ],
-      onToolDoubleClick: lineMode.onToolDoubleClick,
       onToolClick: lineMode.onToolClick,
       onToolMove: lineMode.onToolMove,
     });
