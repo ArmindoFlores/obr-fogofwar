@@ -1,58 +1,118 @@
-import OBR, { buildCurve } from "@owlbear-rodeo/sdk";
+import OBR, { buildCurve, buildLabel, buildShape } from "@owlbear-rodeo/sdk";
 import { ID } from "./globals";
 
-let interaction = null;
-async function onToolDoubleClick(context, event) {
+let interaction = null, finishLabelId = "", finishId = "", cancelId = "", cancelLabelId = "";
+
+async function cleanUpPopovers() {
+  await OBR.scene.local.deleteItems([cancelLabelId, finishLabelId, finishId, cancelId]);
+  finishLabelId = "";
+  finishId = "";
+  cancelLabelId = "";
+  cancelId = "";
+}
+
+async function cancelDrawing() {
+  if (!interaction)
+    return;
+
+  const [_, stop] = interaction;
+  stop();
+  cleanUpPopovers();  
+}
+
+async function finishDrawing() {
+  if (!interaction)
+    return;
+
+  const [update, stop] = interaction;
+  // Add the polygon to the scene
+  const polygon = update(polygon => {
+    polygon.visible = false;
+    polygon.metadata[`${ID}/isVisionLine`] = true;
+    polygon.layer = "FOG";
+  });
+  OBR.scene.items.addItems([polygon]);
+  // Make sure we stop the interaction so others
+  // can interact with our new polygon
+  stop();
+  interaction = null;
+  cleanUpPopovers();
+}
+
+async function onToolClick(_, event) {
+  if (event.transformer)
+    return;
   if (!interaction) {
-    // Build a line with the start and end position of our pointer
-    const line = buildCurve()
+    const polygon = buildCurve()
     .tension(0)
     .points([event.pointerPosition, event.pointerPosition])
     .fillColor("#000000")
     .strokeColor("#000000")
     .layer("DRAWING")
     .build();
-    // Start an interaction with the new line
-    interaction = await OBR.interaction.startItemInteraction(line);
+    interaction = await OBR.interaction.startItemInteraction(polygon);
+
+    const finish = buildShape()
+      .shapeType("CIRCLE")
+      .strokeColor("#FFFFFF")
+      .width(8)
+      .height(8)
+      .strokeWidth(2)
+      .position(event.pointerPosition)
+      .layer("POPOVER")
+      .build();
+    const finishLabel = buildLabel()
+      .plainText("Finish")
+      .position(event.pointerPosition)
+      .layer("POPOVER")
+      .build(); 
+
+    const cancel = buildShape()
+      .shapeType("CIRCLE")
+      .strokeColor("#FFFFFF")
+      .width(8)
+      .height(8)
+      .strokeWidth(2)
+      .position({x: event.pointerPosition.x, y: event.pointerPosition.y})
+      .layer("POPOVER")
+      .visible(false)
+      .build();
+    const cancelLabel = buildLabel()
+      .plainText("Cancel")
+      .position({x: event.pointerPosition.x, y: event.pointerPosition.y})
+      .layer("POPOVER")
+      .pointerDirection("UP")
+      .build(); 
+    
+    await OBR.scene.local.addItems([finishLabel, finish, cancel, cancelLabel]);
+    finishLabelId = finishLabel.id;
+    finishId = finish.id;
+    cancelLabelId = cancelLabel.id;
+    cancelId = cancel.id;
   }
   else {
-    const [update, stop] = interaction;
-    // Perform a final update when the drag ends
-    // This gets us the final line item
-    const polygon = update((polygon) => {
-      polygon.points.push(event.pointerPosition);
-      polygon.points.push(polygon.points[0]);
-      polygon.visible = false;
-      polygon.metadata[`${ID}/isVisionLine`] = true;
-      polygon.layer = "FOG";
-    });
-    // Add the polygon to the scene
-    OBR.scene.items.addItems([polygon]);
-    // Make sure we stop the interaction so others
-    // can interact with our new polygon
-    stop();
-    interaction = null;
+    if (event.target && (event.target.id === finishLabelId || event.target.id === finishId))
+      finishDrawing();
+    else if (event.target && (event.target.id === cancelLabelId || event.target.id === cancelId))
+      cancelDrawing();
+    else {
+      const [update] = interaction;
+      update((polygon) => {
+        polygon.points.push(event.pointerPosition);
+      });
+    }
   }
 }
 
 function onToolMove(_, event) {
-  // Update the end position of the interaction when the tool drags
-  if (interaction) {
-    const [update] = interaction;
-    update((line) => {
-      line.points[line.points.length-1] = event.pointerPosition;
-    });
-  }
+  if (!interaction || event.transformer)
+    return;
+
+  // Update the end position of the interaction when the tool moves
+  const [update] = interaction;
+  update((polygon) => {
+    polygon.points[polygon.points.length-1] = event.pointerPosition;
+  });
 }
 
-function onToolClick(_, event) {
-  // Update the end position of the interaction when the tool drags
-  if (interaction) {
-    const [update] = interaction;
-    update((line) => {
-      line.points.push(event.pointerPosition);
-    });
-  }
-}
-
-export const polygonMode = {onToolClick, onToolDoubleClick, onToolMove};
+export const polygonMode = {onToolClick, onToolMove};

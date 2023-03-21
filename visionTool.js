@@ -119,7 +119,6 @@ export function createMode() {
           },
         },
       ],
-      onToolDoubleClick: polygonMode.onToolDoubleClick,
       onToolClick: polygonMode.onToolClick,
       onToolMove: polygonMode.onToolMove,
     });
