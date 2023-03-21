@@ -30,10 +30,10 @@ async function finishDrawing() {
   const polygon = update(polygon => {
     polygon.visible = false;
     polygon.metadata[`${ID}/isVisionLine`] = true;
-    polygon.layer = "FOG";
     polygon.points.pop();
+    polygon.points.push(polygon.points[0]);
   });
-  if (polygon.points.length >= 3)
+  if (polygon.points.length >= 4)
     OBR.scene.items.addItems([polygon]);
   // Make sure we stop the interaction so others
   // can interact with our new polygon
