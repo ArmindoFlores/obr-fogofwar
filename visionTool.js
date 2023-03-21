@@ -23,7 +23,7 @@ export function setupContextMenus() {
         },
       },
       {
-        icon: "/resources/icon.svg", // should use another image (like an 'X' overlapped with the base item)
+        icon: "/resources/icon.svg",
         label: "Disable Vision",
         filter: {
           every: [{ key: "layer", value: "CHARACTER" }],
@@ -56,7 +56,7 @@ export function setupContextMenus() {
         filter: {
           every: [{ key: "layer", value: "MAP" }, { key: ["metadata", `${ID}/isBackgroundImage`], value: undefined}],
         },
-      }
+      },
     ],
     onClick(ctx) {
       if (ctx.items.length != 1)
@@ -76,7 +76,7 @@ export function setupContextMenus() {
   // This context appears on vision lines and lets the user toggle whether
   // they're active or not
   OBR.contextMenu.create({
-    id: `${ID}/set-background-image`,
+    id: `${ID}/toggle-vision-line`,
     icons: [
       {
         icon: "/resources/icon.svg",
@@ -407,10 +407,6 @@ async function computeShadow(event) {
 
   // Update all items
   await Promise.all([
-    OBR.scene.items.updateItems(isActiveVisionLine, items => {
-      for (const item of items)
-        item.zIndex = 2;
-    }),
     OBR.scene.items.addItems(itemsToAdd.map(item => {
       const path = buildPath().commands(item.cmds).locked(true).visible(item.visible).fillColor("#000000").strokeColor("#000000").layer("FOG").name("Fog of War").metadata({[`${ID}/isVisionFog`]: true}).build();
       path.zIndex = item.zIndex;
