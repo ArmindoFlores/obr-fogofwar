@@ -1,5 +1,5 @@
 import OBR, { buildCurve } from "@owlbear-rodeo/sdk";
-const ID = "com.armindoflores.obrvision";
+import { ID } from "./globals";
 
 // TODO: this file isn't needed, simple modifications to visionPolygonMode would do
 let interaction = null;
