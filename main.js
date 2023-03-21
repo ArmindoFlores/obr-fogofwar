@@ -82,16 +82,13 @@ OBR.onReady(() => {
       createMode();
       createActions();
       
-      sceneCache.items = await OBR.scene.items.getItems();
-      sceneCache.metadata = await OBR.scene.getMetadata();
-      sceneCache.gridDpi = await OBR.scene.grid.getDpi();
-      sceneCache.gridScale = await OBR.scene.grid.getScale();
       [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale] = await Promise.all([
         OBR.scene.items.getItems(),
         OBR.scene.getMetadata(),
         OBR.scene.grid.getDpi(),
         OBR.scene.grid.getScale(),
       ]);
+      sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
 
       OBR.scene.items.onChange(items => {
         sceneCache.items = items;
