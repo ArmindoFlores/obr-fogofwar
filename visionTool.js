@@ -427,7 +427,7 @@ async function computeShadow(event) {
 }
 document.addEventListener("updateVision", computeShadow)
 
-var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionRange;
+var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionRange, previousVisionEnabled;
 export async function onSceneDataChange() {
   if (busy)
     return;
@@ -443,6 +443,7 @@ export async function onSceneDataChange() {
   const playersWithVision = sceneCache.items.filter(item => item.metadata[`${ID}/hasVision`]);
   const visionShapes = sceneCache.items.filter(isActiveVisionLine);
   const backgroundImage = sceneCache.items.filter(isBackgroundImage)?.[0];
+  const visionEnabled = sceneCache.metadata[`${ID}/visionEnabled`] === true;
   if (backgroundImage === undefined)
     return;
 
@@ -457,7 +458,7 @@ export async function onSceneDataChange() {
   // Check if any values have changed and a re-draw is necessary
   const sVisionShapes = JSON.stringify(visionShapes);
   const sPlayersWithVision = JSON.stringify(playersWithVision);
-  if (previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1] && previousVisionRange == visionRange)
+  if (visionEnabled == previousVisionEnabled && previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1] && previousVisionRange == visionRange)
     return;
 
   // Check if the cache needs to be invalidated
@@ -469,6 +470,7 @@ export async function onSceneDataChange() {
   previousVisionShapes = sVisionShapes;
   previousSize = size;
   previousVisionRange = visionRange;
+  previousVisionEnabled = visionEnabled;
   computeTimer.pause();
 
   // Fire an `updateVisionEvent` to launch the `computeShadow` function.
