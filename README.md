@@ -7,7 +7,7 @@ icon: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/public/i
 tags:
   - vision
   - fog
-manifest: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/manifest.json
+manifest: https://owlbear-rodeo-dynamic-fog-of-war.onrender.com/manifest.json
 learn-more: https://github.com/ArmindoFlores/obr-fogofwar
 ---
 
