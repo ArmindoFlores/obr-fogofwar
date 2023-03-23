@@ -2,8 +2,8 @@
 title: Dynamic Fog Of War
 description: Dynamic fog of war for battlemaps
 author: Francisco Rodrigues
-image: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/resources/example.png
-icon: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/resources/icon.svg
+image: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/public/example.png
+icon: https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/public/icon.svg
 tags:
   - vision
   - fog
@@ -25,8 +25,8 @@ When using multiple player tokens, the fog of war will be combined so only the a
 
 # Example
 
-![Vision Example](https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/resources/example.png)
+![Vision Example](https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/public/example.png)
 
 In this example you can see two tokens' fog of war displayed. Both point of views and vision ranges are taken into account to draw the final shadows. In the following image you can see which polygons were drawn to achieve this effect (shown with a light gray outline):
 
-![Polygon Example](https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/resources/example-explanation.png)
+![Polygon Example](https://raw.githubusercontent.com/ArmindoFlores/obr-fogofwar/main/public/example-explanation.png)

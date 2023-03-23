@@ -16,14 +16,14 @@ export function setupContextMenus() {
     id: `${ID}/toggle-vision-menu`,
     icons: [
       {
-        icon: "/resources/no-vision.svg",
+        icon: "/no-vision.svg",
         label: "Enable Vision",
         filter: {
           every: [{ key: "layer", value: "CHARACTER" }, { key: ["metadata", `${ID}/hasVision`], value: undefined}],
         },
       },
       {
-        icon: "/resources/icon.svg",
+        icon: "/icon.svg",
         label: "Disable Vision",
         filter: {
           every: [{ key: "layer", value: "CHARACTER" }],
@@ -51,7 +51,7 @@ export function setupContextMenus() {
     id: `${ID}/set-background-image`,
     icons: [
       {
-        icon: "/resources/set-background.svg",
+        icon: "/set-background.svg",
         label: "Set as background image",
         filter: {
           every: [{ key: "layer", value: "MAP" }, { key: ["metadata", `${ID}/isBackgroundImage`], value: undefined}],
@@ -79,14 +79,14 @@ export function setupContextMenus() {
     id: `${ID}/toggle-vision-line`,
     icons: [
       {
-        icon: "/resources/icon.svg",
+        icon: "/icon.svg",
         label: "Disable Vision Line",
         filter: {
           every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}, { key: ["metadata", `${ID}/disabled`], value: undefined}],
         },
       },
       {
-        icon: "/resources/no-vision.svg",
+        icon: "/no-vision.svg",
         label: "Enable Vision Line",
         filter: {
           every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}],
@@ -114,7 +114,7 @@ export function createTool() {
     id: `${ID}/vision-tool`,
     icons: [
       {
-        icon: "/resources/icon.svg",
+        icon: "/icon.svg",
         label: "Setup Vision",
       },
     ],
@@ -129,7 +129,7 @@ export function createMode() {
     //   id: `${ID}/erase-vision-mode`,
     //   icons: [
     //     {
-    //       icon: "/resources/add.svg", // mismatched item
+    //       icon: "/add.svg", // mismatched item
     //       label: "Erase Vision",
     //       filter: {
     //         activeTools: [`${ID}/vision-tool`],
@@ -146,7 +146,7 @@ export function createMode() {
       id: `${ID}/add-vision-polygon-mode`,
       icons: [
         {
-          icon: "/resources/object.svg",
+          icon: "/object.svg",
           label: "Add Obstruction Object",
           filter: {
             activeTools: [`${ID}/vision-tool`],
@@ -162,7 +162,7 @@ export function createMode() {
       id: `${ID}/add-vision-line-mode`,
       icons: [
         {
-          icon: "/resources/line.svg",
+          icon: "/line.svg",
           label: "Add Obstruction Line",
           filter: {
             activeTools: [`${ID}/vision-tool`],

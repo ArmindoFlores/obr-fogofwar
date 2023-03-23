@@ -4,7 +4,7 @@
     "manifest_version": 1,
     "action": {
         "title": "Dynamic Fog Of War",
-        "icon": "/resources/icon.svg",
+        "icon": "/icon.svg",
         "popover": "/",
         "height": 600,
         "width": 400
