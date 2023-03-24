@@ -365,6 +365,7 @@ async function computeShadow(event) {
         shapePath.delete();
       }
       pathBuilder.add(newPath, PathKit.PathOp.DIFFERENCE);
+      newPath.delete();
     }
     const path = pathBuilder.resolve();
     pathBuilder.delete();
