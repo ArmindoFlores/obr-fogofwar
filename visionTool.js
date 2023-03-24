@@ -341,7 +341,10 @@ async function computeShadow(event) {
     }
     cacheMisses++;
     const playerPolygons = polygons[j];
-    const path = PathKit.NewPath();
+    const pathBuilder = new PathKit.SkOpBuilder();
+    const tempPath = PathKit.NewPath().rect(offset[0], offset[1], size[0], size[1]);
+    pathBuilder.add(tempPath, PathKit.PathOp.UNION);
+    tempPath.delete();
 
     // Merge all polygons
     for (const polygon of playerPolygons) {
@@ -352,7 +355,6 @@ async function computeShadow(event) {
       for (let j = 1; j < polygon.pointset.length; j++) {
         newPath.lineTo(polygon.pointset[j].x, polygon.pointset[j].y);
       }
-      newPath.close();
 
       if (shape.style.closed != false) {
         const shapePath = PathKit.NewPath();
@@ -362,9 +364,11 @@ async function computeShadow(event) {
         newPath.op(shapePath, PathKit.PathOp.DIFFERENCE);
         shapePath.delete();
       }
-      path.op(newPath, PathKit.PathOp.UNION);
-      newPath.delete();
+      pathBuilder.add(newPath, PathKit.PathOp.DIFFERENCE);
     }
+    const path = pathBuilder.resolve();
+    pathBuilder.delete();
+
     if (path !== undefined) {
       path.simplify();
       itemsPerPlayer[j] = path;
@@ -378,42 +382,45 @@ async function computeShadow(event) {
   }
 
   // *3rd step* - create a shadow mask to merge all players' FoW
-  let pathMask = undefined;
-  for (const playerPath of Object.values(itemsPerPlayer)) {
-    if (pathMask === undefined)
-      pathMask = playerPath.copy();
-    else
-      pathMask.op(playerPath, PathKit.PathOp.INTERSECT);
-  }
-  pathMask.simplify()
-  const itemsToAdd = [{cmds: pathMask.toCmds(), visible: true, zIndex: 3}];
-  pathMask.delete();
-
+  let pathMask = new PathKit.SkOpBuilder();
+  for (const playerPath of Object.values(itemsPerPlayer))
+      pathMask.add(playerPath, PathKit.PathOp.UNION);
+  
   if (visionRange) {
-    // Create vision circles that cut a fog rectangle in a lower layer
-    const backgroundFog = PathKit.NewPath().rect(offset[0], offset[1], size[0], size[1]);
+    // Create vision circles that cut each player's fog
     const playerVision = PathKit.NewPath();
     for (const player of playersWithVision) {
-        const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
-        ellipse.op(playerShadowCache.getValue(player.id).shadowPath, PathKit.PathOp.DIFFERENCE);
-        playerVision.op(ellipse, PathKit.PathOp.UNION);
-        ellipse.delete();
-      }
-    playerVision.simplify();
-    itemsToAdd.push({cmds: backgroundFog.toCmds(), visible: true, zIndex: 1}, {cmds: playerVision.toCmds(), visible: false, zIndex: 1})
+      const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
+      ellipse.op(playerShadowCache.getValue(player.id).shadowPath, PathKit.PathOp.INTERSECT);
+      playerVision.op(ellipse, PathKit.PathOp.UNION);
+      ellipse.delete();
+    }
+    pathMask.add(playerVision, PathKit.PathOp.INTERSECT);
+    playerVision.delete();
   }
+  
+  const finalPath = pathMask.resolve();
+  pathMask.delete();
+  finalPath.simplify()
+  const itemsToAdd = [{cmds: finalPath.toCmds(), visible: false, zIndex: 3}];
+  finalPath.delete();
 
   computeTimer.pause(); awaitTimer.resume();
 
-  // Update all items
-  await Promise.all([
+  const promisesToExecute = [
     OBR.scene.items.addItems(itemsToAdd.map(item => {
       const path = buildPath().commands(item.cmds).locked(true).visible(item.visible).fillColor("#000000").strokeColor("#000000").layer("FOG").name("Fog of War").metadata({[`${ID}/isVisionFog`]: true}).build();
       path.zIndex = item.zIndex;
       return path;
     })),
     OBR.scene.items.deleteItems(allItems.filter(isVisionFog).map(fogItem => fogItem.id)),
-  ]);
+  ];
+
+  if (!sceneCache.fog.filled)
+    promisesToExecute.push(OBR.scene.fog.setFilled(true));
+
+  // Update all items
+  await Promise.all(promisesToExecute);
   
   const [awaitTimerResult, computeTimerResult] = [awaitTimer.stop(), computeTimer.stop()];
   updatePerformanceInformation({

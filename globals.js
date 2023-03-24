@@ -6,6 +6,7 @@ class SceneCash {
         this.metadata = undefined;
         this.gridDpi = undefined;
         this.gridScale = undefined;
+        this.fog = undefined;
     }
 };
 

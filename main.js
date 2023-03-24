@@ -82,13 +82,17 @@ OBR.onReady(() => {
       createMode();
       createActions();
       
-      [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale] = await Promise.all([
+      let fogFilled, fogColor;
+      [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale, fogFilled, fogColor] = await Promise.all([
         OBR.scene.items.getItems(),
         OBR.scene.getMetadata(),
         OBR.scene.grid.getDpi(),
         OBR.scene.grid.getScale(),
+        OBR.scene.fog.getFilled(),
+        OBR.scene.fog.getColor()
       ]);
       sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
+      sceneCache.fog = {filled: fogFilled, style: {color: fogColor, strokeWidth: 5}};
 
       let image = undefined;
       if (sceneCache.items.filter(isBackgroundImage).length == 0) {
@@ -96,6 +100,10 @@ OBR.onReady(() => {
         const areas = images.map(image => image.image.width * image.image.height / Math.pow(image.grid.dpi, 2));
         image = images[areas.indexOf(Math.max(...areas))];
       }
+
+      OBR.scene.fog.onChange(fog => {
+        sceneCache.fog = fog;
+      });
 
       OBR.scene.items.onChange(items => {
         sceneCache.items = items;
