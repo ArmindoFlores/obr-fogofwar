@@ -107,8 +107,10 @@ function updateUI(items)
       const unlimitedCheckbox = tr.getElementsByClassName("unlimited-vision")[0];
       if (name)
         name.innerText = player.name;
-      if (rangeInput)
-        rangeInput.value = player.metadata[`${ID}/visionRange`];
+      if (rangeInput) {
+        if (!unlimitedCheckbox.checked)
+          rangeInput.value = player.metadata[`${ID}/visionRange`] ? player.metadata[`${ID}/visionRange`] : 60;
+      }
       if (unlimitedCheckbox) 
         unlimitedCheckbox.checked = !player.metadata[`${ID}/visionRange`];
     }
