@@ -102,9 +102,15 @@ function updateUI(items)
     const tr = document.getElementById(`tr-${player.id}`);
     if (tr) {
       // Update with current information
-      const name = tr.getElementsByClassName("token-name")[0];
+      const name = tr.getElementsByClassName("token-name")[0]
+      const rangeInput = tr.getElementsByClassName("token-vision-range")[0];
+      const unlimitedCheckbox = tr.getElementsByClassName("unlimited-vision")[0];
       if (name)
         name.innerText = player.name;
+      if (rangeInput)
+        rangeInput.value = player.metadata[`${ID}/visionRange`];
+      if (unlimitedCheckbox) 
+        unlimitedCheckbox.checked = !player.metadata[`${ID}/visionRange`];
     }
     else {
       // Create new item for this token
