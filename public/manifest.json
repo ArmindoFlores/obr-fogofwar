@@ -6,7 +6,7 @@
         "title": "Dynamic Fog Of War",
         "icon": "/icon.svg",
         "popover": "/",
-        "height": 600,
+        "height": 500,
         "width": 400
     }
 }

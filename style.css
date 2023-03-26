@@ -95,3 +95,66 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+hr {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+input.large {
+  width: 2.2em; 
+  height: 2.2em;
+  margin: 0;
+  padding: 0;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input.token-vision-range::-webkit-outer-spin-button,
+input.token-vision-range::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input.token-vision-range[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* style for input element */
+input.token-vision-range {
+  text-align: right;
+  padding-right: 1.3em; /* adjust this value based on the width of the unit */
+  box-sizing: border-box; /* include padding and border in the width */
+  width: 3.5em;
+}
+
+.token-list > * {
+  display: inline-block;
+}
+
+.token-name {
+  padding-right: 1.5em;
+  overflow: hidden; 
+  white-space: nowrap; 
+  text-overflow: ellipsis; 
+  max-width: 10em;
+  vertical-align: middle;
+}
+
+/* style for unit element */
+.unit {
+  margin-left: -1em;
+  padding-right: 1em;
+}
+
+.vl {
+  border-left: 1px solid rgb(255, 255, 255);
+  height: 1.3em;
+  vertical-align: middle;
+  margin-right: 1em;
+}
+
+li > p {
+  margin: 0;
+  padding: 0;
+}

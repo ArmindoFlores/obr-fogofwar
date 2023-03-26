@@ -2,7 +2,7 @@ import OBR, { buildPath } from "@owlbear-rodeo/sdk";
 import PathKitInit from "pathkit-wasm/bin/pathkit";
 import wasm from "pathkit-wasm/bin/pathkit.wasm?url";
 import { ID, sceneCache } from "./globals";
-import { isBackgroundImage, isVisionFog, isActiveVisionLine } from "./itemFilters";
+import { isBackgroundImage, isVisionFog, isActiveVisionLine, isPlayerWithVision } from "./itemFilters";
 import { polygonMode } from "./visionPolygonMode";
 import { lineMode } from "./visionLineMode";
 import { squareDistance, comparePosition } from "./mathutils";
@@ -383,11 +383,12 @@ async function computeShadow(event) {
   }
 
   // *3rd step* - compute vision ranges
-  if (visionRange) {
     // Create vision circles that cut each player's fog
-    for (let i = 0; i < playersWithVision.length; i++) {
-      console.log("Recomputing", i);
-      const player = playersWithVision[i];
+  for (let i = 0; i < playersWithVision.length; i++) {
+    const player = playersWithVision[i];
+    const visionRangeMeta = player.metadata[`${ID}/visionRange`];
+    if (visionRangeMeta) {
+      const visionRange = sceneCache.gridDpi * (visionRangeMeta / sceneCache.gridScale + .5);
       const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
       itemsPerPlayer[i].op(ellipse, PathKit.PathOp.INTERSECT);
       ellipse.delete();
@@ -429,7 +430,7 @@ async function computeShadow(event) {
 }
 document.addEventListener("updateVision", computeShadow)
 
-var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionRange, previousVisionEnabled;
+var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionEnabled;
 export async function onSceneDataChange() {
   if (busy)
     return;
@@ -442,7 +443,7 @@ export async function onSceneDataChange() {
   awaitTimer.start(); awaitTimer.pause();
   computeTimer.start();
 
-  const playersWithVision = sceneCache.items.filter(item => item.metadata[`${ID}/hasVision`]);
+  const playersWithVision = sceneCache.items.filter(isPlayerWithVision);
   const visionShapes = sceneCache.items.filter(isActiveVisionLine);
   const backgroundImage = sceneCache.items.filter(isBackgroundImage)?.[0];
   const visionEnabled = sceneCache.metadata[`${ID}/visionEnabled`] === true;
@@ -453,14 +454,13 @@ export async function onSceneDataChange() {
   const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
   const scale = [backgroundImage.scale.x, backgroundImage.scale.y];
   const offset = [backgroundImage.position.x, backgroundImage.position.y];
-  document.getElementById("vision_size").innerText = `${size[0]}x${Math.round(size[1])} px`;
-
-  const visionRange = sceneCache.metadata[`${ID}/playerVisionRange`];
+  document.getElementById("map_name").innerText = backgroundImage.name;
+  document.getElementById("map_size").innerText = `Map size: ${Math.round(size[0])}x${Math.round(size[1])} px`;
 
   // Check if any values have changed and a re-draw is necessary
   const sVisionShapes = JSON.stringify(visionShapes);
   const sPlayersWithVision = JSON.stringify(playersWithVision);
-  if (visionEnabled == previousVisionEnabled && previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1] && previousVisionRange == visionRange)
+  if (visionEnabled == previousVisionEnabled && previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1])
     return;
 
   // Check if the cache needs to be invalidated
@@ -471,7 +471,6 @@ export async function onSceneDataChange() {
   previousPlayersWithVision = sPlayersWithVision;
   previousVisionShapes = sVisionShapes;
   previousSize = size;
-  previousVisionRange = visionRange;
   previousVisionEnabled = visionEnabled;
   computeTimer.pause();
 
@@ -488,7 +487,6 @@ export async function onSceneDataChange() {
       playersWithVision: playersWithVision,
       visionShapes: visionShapes,
       invalidateCache: invalidateCache,
-      visionRange: visionRange ? sceneCache.gridDpi * (visionRange / sceneCache.gridScale + .5) : 0,
     }
   });
 
