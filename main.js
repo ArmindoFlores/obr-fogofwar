@@ -111,8 +111,15 @@ function updateUI(items)
         if (!unlimitedCheckbox.checked)
           rangeInput.value = player.metadata[`${ID}/visionRange`] ? player.metadata[`${ID}/visionRange`] : 60;
       }
-      if (unlimitedCheckbox) 
+      if (unlimitedCheckbox) {
         unlimitedCheckbox.checked = !player.metadata[`${ID}/visionRange`];
+      }
+      if (unlimitedCheckbox.checked)
+        rangeInput.setAttribute("disabled", "disabled");
+      else {
+        value = parseInt(rangeInput.value);
+        rangeInput.removeAttribute("disabled");
+      }
     }
     else {
       // Create new item for this token
