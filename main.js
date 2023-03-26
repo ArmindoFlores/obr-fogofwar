@@ -116,10 +116,8 @@ function updateUI(items)
       }
       if (unlimitedCheckbox.checked)
         rangeInput.setAttribute("disabled", "disabled");
-      else {
-        value = parseInt(rangeInput.value);
+      else
         rangeInput.removeAttribute("disabled");
-      }
     }
     else {
       // Create new item for this token
