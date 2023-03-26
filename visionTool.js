@@ -335,7 +335,7 @@ async function computeShadow(event) {
     let cacheResult = playerShadowCache.getValue(player.id);
     if (cacheResult !== undefined && comparePosition(cacheResult.player.position, player.position)) {
       // The value is cached, use it
-      itemsPerPlayer[j] = cacheResult.shadowPath;
+      itemsPerPlayer[j] = cacheResult.shadowPath.copy();
       cacheHits++;
       continue;
     }
@@ -378,33 +378,27 @@ async function computeShadow(event) {
         cacheResult.shadowPath.delete();
       }
       // Cache the computed path for future use
-      playerShadowCache.cacheValue(player.id, {shadowPath: path, player: player});
+      playerShadowCache.cacheValue(player.id, {shadowPath: path.copy(), player: player});
     }
   }
 
-  // *3rd step* - create a shadow mask to merge all players' FoW
-  let pathMask = new PathKit.SkOpBuilder();
-  for (const playerPath of Object.values(itemsPerPlayer))
-      pathMask.add(playerPath, PathKit.PathOp.UNION);
-  
+  // *3rd step* - compute vision ranges
   if (visionRange) {
     // Create vision circles that cut each player's fog
-    const playerVision = PathKit.NewPath();
-    for (const player of playersWithVision) {
+    for (let i = 0; i < playersWithVision.length; i++) {
+      console.log("Recomputing", i);
+      const player = playersWithVision[i];
       const ellipse = PathKit.NewPath().ellipse(player.position.x, player.position.y, visionRange, visionRange, 0, 0, 2*Math.PI);
-      ellipse.op(playerShadowCache.getValue(player.id).shadowPath, PathKit.PathOp.INTERSECT);
-      playerVision.op(ellipse, PathKit.PathOp.UNION);
+      itemsPerPlayer[i].op(ellipse, PathKit.PathOp.INTERSECT);
       ellipse.delete();
     }
-    pathMask.add(playerVision, PathKit.PathOp.INTERSECT);
-    playerVision.delete();
   }
   
-  const finalPath = pathMask.resolve();
-  pathMask.delete();
-  finalPath.simplify()
-  const itemsToAdd = [{cmds: finalPath.toCmds(), visible: false, zIndex: 3}];
-  finalPath.delete();
+  const itemsToAdd = [];
+  for (const item of Object.values(itemsPerPlayer)) {
+    itemsToAdd.push({cmds: item.toCmds(), visible: false, zIndex: 3});
+    item.delete();
+  }
 
   computeTimer.pause(); awaitTimer.resume();
 
