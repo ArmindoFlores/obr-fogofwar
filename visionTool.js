@@ -229,7 +229,7 @@ async function computeShadow(event) {
   computeTimer.resume();
   
   const shouldComputeVision = metadata[`${ID}/visionEnabled`] === true;
-  if (!shouldComputeVision) {
+  if (!shouldComputeVision || playersWithVision.length == 0) {
     // Clear fog
     await OBR.scene.items.deleteItems(allItems.filter(isVisionFog).map(fogItem => fogItem.id));
     busy = false;
