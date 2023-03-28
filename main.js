@@ -39,52 +39,26 @@ app.innerHTML = `
 `
 async function setButtonHandler() {
   const visionCheckbox = document.getElementById("vision_checkbox");
-  // const unlimitedCheckbox = document.getElementById("vision_range_checkbox");
-  // const rangeSlider = document.getElementById("token_vision_radius");
-  // const rangeText = document.getElementById("token_vision_text");
 
   // The visionCheckbox element is responsible for toggling vision updates
   visionCheckbox.addEventListener("click", async event => {
+    if (!sceneCache.ready) {
+      event.preventDefault();
+      return;
+    }
     await OBR.scene.setMetadata({[`${ID}/visionEnabled`]: event.target.checked});
   }, false);
-
-  // When unlimitedCheckbox is checked, there is no limit to the player tokens'
-  // vision range
-  // unlimitedCheckbox.addEventListener("click", async event => {
-  //   let value = false;
-  //   if (event.target.checked) {
-  //     rangeSlider.setAttribute("disabled", "disabled");
-  //     rangeText.style.visibility = "hidden";
-  //   }
-  //   else {
-  //     value = parseInt(rangeSlider.value);
-  //     rangeSlider.removeAttribute("disabled");
-  //     rangeText.style.visibility = "visible";
-  //   }
-  //   await OBR.scene.setMetadata({[`${ID}/playerVisionRange`]: value});
-  // }, false);
-
-  // Populate the initial values
-  const [backgroundImages, metadata, dpi] = await Promise.all([
-    await OBR.scene.items.getItems(isBackgroundImage),
-    await OBR.scene.getMetadata(),
-    await OBR.scene.grid.getDpi(),
-  ]);
-  const backgroundImage = backgroundImages.length ? backgroundImages[0] : undefined;
-  if (backgroundImage) {
-    const dpiRatio = dpi / backgroundImage.grid.dpi;
-    const size = [backgroundImage.image.width * dpiRatio, backgroundImage.image.height * dpiRatio];
-    document.getElementById("map_name").innerText = backgroundImage.name;
-    document.getElementById("map_size").innerText = `Map size: ${Math.round(size[0])}x${Math.round(size[1])} px`;
-  }
-  visionCheckbox.checked = metadata[`${ID}/visionEnabled`] == true;
 }
 
 function updateUI(items)
 {
   const table = document.getElementById("token_list");
   const message = document.getElementById("no_tokens_message");
+  const visionCheckbox = document.getElementById("vision_checkbox");
   const playersWithVision = items.filter(isPlayerWithVision);
+
+  if (sceneCache.metadata)
+    visionCheckbox.checked = sceneCache.metadata[`${ID}/visionEnabled`] == true;
 
   if (playersWithVision.length > 0)
     message.style.display = "none";
@@ -92,11 +66,14 @@ function updateUI(items)
     message.style.display = "block";
 
   const tokenTableEntries = document.getElementsByClassName("token-table-entry");
+  const toRemove = [];
   for (const token of tokenTableEntries) {
     const tokenId = token.id.slice(3);
     if (playersWithVision.find(player => player.id === tokenId) === undefined)
-      token.remove();
+      toRemove.push(token);
   }
+  for (const token of toRemove)
+    token.remove();
 
   for (const player of playersWithVision) {
     const tr = document.getElementById(`tr-${player.id}`);
@@ -156,6 +133,36 @@ function updateUI(items)
   }
 }
 
+async function initScene() 
+{
+  let fogFilled, fogColor;
+  [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale, fogFilled, fogColor] = await Promise.all([
+    OBR.scene.items.getItems(),
+    OBR.scene.getMetadata(),
+    OBR.scene.grid.getDpi(),
+    OBR.scene.grid.getScale(),
+    OBR.scene.fog.getFilled(),
+    OBR.scene.fog.getColor()
+  ]);
+  sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
+  sceneCache.fog = {filled: fogFilled, style: {color: fogColor, strokeWidth: 5}};
+
+  let image = undefined;
+  if (sceneCache.items.filter(isBackgroundImage).length == 0) {
+    const images = sceneCache.items.filter(item => item.layer == "MAP" && item.type == "IMAGE");
+    const areas = images.map(image => image.image.width * image.image.height / Math.pow(image.grid.dpi, 2));
+    image = images[areas.indexOf(Math.max(...areas))];
+  }
+
+  updateUI(sceneCache.items);
+
+  if (image !== undefined) {
+    await OBR.scene.items.updateItems([image], items => {
+      items[0].metadata[`${ID}/isBackgroundImage`] = true;
+    });
+  }
+}
+
 // Setup extension add-ons
 OBR.onReady(() => {
   OBR.player.getRole().then(async value => {
@@ -166,27 +173,6 @@ OBR.onReady(() => {
       createTool();
       createMode();
       createActions();
-      
-      let fogFilled, fogColor;
-      [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale, fogFilled, fogColor] = await Promise.all([
-        OBR.scene.items.getItems(),
-        OBR.scene.getMetadata(),
-        OBR.scene.grid.getDpi(),
-        OBR.scene.grid.getScale(),
-        OBR.scene.fog.getFilled(),
-        OBR.scene.fog.getColor()
-      ]);
-      sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
-      sceneCache.fog = {filled: fogFilled, style: {color: fogColor, strokeWidth: 5}};
-
-      let image = undefined;
-      if (sceneCache.items.filter(isBackgroundImage).length == 0) {
-        const images = sceneCache.items.filter(item => item.layer == "MAP" && item.type == "IMAGE");
-        const areas = images.map(image => image.image.width * image.image.height / Math.pow(image.grid.dpi, 2));
-        image = images[areas.indexOf(Math.max(...areas))];
-      }
-
-      updateUI(sceneCache.items);
 
       OBR.scene.fog.onChange(fog => {
         sceneCache.fog = fog;
@@ -194,26 +180,42 @@ OBR.onReady(() => {
 
       OBR.scene.items.onChange(items => {
         sceneCache.items = items;
-        updateUI(items);
-        onSceneDataChange();
+        if (sceneCache.ready) {
+          updateUI(items);
+          onSceneDataChange();
+        }
       });
 
       OBR.scene.grid.onChange(grid => {
         sceneCache.gridDpi = grid.dpi;
         sceneCache.gridScale = parseInt(grid.scale);
-        onSceneDataChange();
+        if (sceneCache.ready)
+          onSceneDataChange();
       });
 
       OBR.scene.onMetadataChange(metadata => {
         sceneCache.metadata = metadata;
-        onSceneDataChange();
+        if (sceneCache.ready)
+          onSceneDataChange();
       });
 
-      if (image !== undefined) {
-        await OBR.scene.items.updateItems([image], items => {
-          items[0].metadata[`${ID}/isBackgroundImage`] = true;
-        });
+      OBR.scene.onReadyChange(ready => {
+        sceneCache.ready = ready;
+        if (ready) {
+          initScene();
+          onSceneDataChange();
+        }
+        else 
+          updateUI([]);
+      });
+
+      sceneCache.ready = await OBR.scene.isReady();
+      if (sceneCache.ready) {
+        initScene();
+        onSceneDataChange();
       }
+      else
+        updateUI([]);
     }
   }
   )

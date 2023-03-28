@@ -7,6 +7,7 @@ class SceneCash {
         this.gridDpi = undefined;
         this.gridScale = undefined;
         this.fog = undefined;
+        this.ready = false;
     }
 };
 
