@@ -197,6 +197,7 @@ export function createMode() {
       ],
       onToolClick: polygonMode.onToolClick,
       onToolMove: polygonMode.onToolMove,
+      onKeyDown: polygonMode.onKeyDown
     });
 
     // Create "add line" mode
@@ -213,6 +214,7 @@ export function createMode() {
       ],
       onToolClick: lineMode.onToolClick,
       onToolMove: lineMode.onToolMove,
+      onKeyDown: lineMode.onKeyDown
     });
 }
 

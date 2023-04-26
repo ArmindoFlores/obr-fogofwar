@@ -119,4 +119,15 @@ function onToolMove(_, event) {
   });
 }
 
-export const polygonMode = {onToolClick, onToolMove};
+function onKeyDown(_, event) {
+  if (!interaction || event.transformer)
+    return;
+  if (event.key == "Escape") {
+    cancelDrawing();
+  }
+  else if (event.key == "Enter") {
+    finishDrawing();
+  }
+}
+
+export const polygonMode = {onToolClick, onToolMove, onKeyDown};
