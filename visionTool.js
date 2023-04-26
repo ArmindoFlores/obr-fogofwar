@@ -106,6 +106,48 @@ export function setupContextMenus() {
       });
     }
   });
+
+  OBR.contextMenu.create({
+    id: `${ID}/switch-one-sided-type`,
+    icons: [
+      {
+        icon: "/two-sided.svg",
+        label: "Two-sided",
+        filter: {
+          every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}, {key: ["metadata", `${ID}/oneSided`], value: undefined}],
+        },
+      },
+      {
+        icon: "/left-sided.svg",
+        label: "One-sided left",
+        filter: {
+          every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}, {key: ["metadata", `${ID}/oneSided`], value: "left"}],
+        },
+      },
+      {
+        icon: "/right-sided.svg",
+        label: "One-sided right",
+        filter: {
+          every: [{ key: ["metadata", `${ID}/isVisionLine`], value: true}],
+        },
+      }
+    ],
+    onClick(ctx) {
+      OBR.scene.items.updateItems(ctx.items, items => {
+        for (const item of items) {
+          if (item.metadata[`${ID}/isVisionLine`] && item.metadata[`${ID}/oneSided`] == "right") {
+            delete item.metadata[`${ID}/oneSided`];
+          }
+          else if (item.metadata[`${ID}/isVisionLine`] && item.metadata[`${ID}/oneSided`] == "left"){
+            item.metadata[`${ID}/oneSided`] = "right";
+          }
+          else if (item.metadata[`${ID}/isVisionLine`]) {
+            item.metadata[`${ID}/oneSided`] = "left";
+          }
+        }
+      });
+    }
+  });
 }
 
 export function createTool() {
@@ -244,6 +286,7 @@ async function computeShadow(event) {
         startPosition: {x: (shape.points[i].x * shape.scale.x + shape.position.x), y: (shape.points[i].y * shape.scale.y + shape.position.y)},
         endPosition: {x: (shape.points[i+1].x * shape.scale.x + shape.position.x), y: (shape.points[i+1].y * shape.scale.y + shape.position.y)},
         originalShape: shape,
+        oneSided: shape.metadata[`${ID}/oneSided`]
       });
     }
   }
@@ -259,8 +302,15 @@ async function computeShadow(event) {
       continue; // The result is cached and will be used later, no need to do work
     }
     for (const line of visionLines) {
-      // *1st step* - compute the points in the polygon representing the shadow
+      if (line.oneSided !== undefined) {
+        const signedDistance = (player.position.x - line.startPosition.x) * (line.endPosition.y - line.startPosition.y) - (player.position.y - line.startPosition.y) * (line.endPosition.x - line.startPosition.x);
+        if ((line.oneSided == "right" && signedDistance > 0) || (line.oneSided == "left" && signedDistance < 0))
+          continue;
+      }
+      
+        // *1st step* - compute the points in the polygon representing the shadow
       // cast by `line` from the point of view of `player`.
+
       const v1 = {x: line.startPosition.x - player.position.x, y: line.startPosition.y - player.position.y};
       const v2 = {x: line.endPosition.x - player.position.x, y: line.endPosition.y - player.position.y};
 
