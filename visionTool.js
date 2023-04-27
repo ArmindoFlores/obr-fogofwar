@@ -5,7 +5,7 @@ import { ID, sceneCache } from "./globals";
 import { isBackgroundImage, isVisionFog, isActiveVisionLine, isPlayerWithVision } from "./itemFilters";
 import { polygonMode } from "./visionPolygonMode";
 import { lineMode } from "./visionLineMode";
-import { squareDistance, comparePosition } from "./mathutils";
+import { squareDistance, comparePosition, isClose, mod } from "./mathutils";
 import { Timer } from "./debug";
 import { ObjectCache } from "./cache";
 
@@ -304,13 +304,13 @@ async function computeShadow(event) {
       continue; // The result is cached and will be used later, no need to do work
     }
     for (const line of visionLines) {
+      const signedDistance = (player.position.x - line.startPosition.x) * (line.endPosition.y - line.startPosition.y) - (player.position.y - line.startPosition.y) * (line.endPosition.x - line.startPosition.x);
       if (line.oneSided !== undefined) {
-        const signedDistance = (player.position.x - line.startPosition.x) * (line.endPosition.y - line.startPosition.y) - (player.position.y - line.startPosition.y) * (line.endPosition.x - line.startPosition.x);
         if ((line.oneSided == "right" && signedDistance > 0) || (line.oneSided == "left" && signedDistance < 0))
           continue;
       }
       
-        // *1st step* - compute the points in the polygon representing the shadow
+      // *1st step* - compute the points in the polygon representing the shadow
       // cast by `line` from the point of view of `player`.
 
       const v1 = {x: line.startPosition.x - player.position.x, y: line.startPosition.y - player.position.y};
@@ -363,15 +363,44 @@ async function computeShadow(event) {
         proj2 = options2[0];
       else
         proj2 = options2[1];
-      
-      polygons[polygons.length-1].push({pointset: [
+
+      const pointset = [
         {x: line.startPosition.x, y: line.startPosition.y},
         proj1,
-        {x: xlim1, y: ylim1},
-        {x: xlim2, y: ylim2},
         proj2,
         {x: line.endPosition.x, y: line.endPosition.y},
-      ], fromShape: line.originalShape});
+      ];
+
+      // Find out in which edge each solution lies
+      const corners = [
+        {x: (width + offset[0]) * scale[0], y: offset[1] * scale[1]},
+        {x: (width + offset[0]) * scale[0], y: (height + offset[1]) * scale[1]},
+        {x: offset[0] * scale[0], y: (height + offset[1]) * scale[1]},
+        {x: offset[0] * scale[0], y: offset[1] * scale[1]}, 
+      ];
+      const edges = [0, 0];
+      let i = 0;
+      for (const proj of [proj1, proj2]) {
+        if (isClose(proj.y, offset[1] * scale[1]))
+          edges[i] = 0;
+        else if (isClose(proj.y, (height + offset[1]) * scale[1]))
+          edges[i] = 2;
+        else if (isClose(proj.x, offset[0] * scale[0]))
+          edges[i] = 3;
+        else if (isClose(proj.x, (width + offset[0]) * scale[0]))
+          edges[i] = 1;
+
+        i++;
+      }
+
+      let direction = Math.sign(signedDistance);
+      direction = direction == 0 ? 1 : -direction;
+      const last = direction == 1 ? edges[1] : mod(edges[1]-1, 4);
+      for (let k = edges[0] + (direction == 1 ? 0 : -1); mod(k, 4) != last; k += direction) {
+        pointset.splice(pointset.length-2, 0, corners[mod(k, 4)]);
+      }
+      
+      polygons[polygons.length-1].push({pointset: pointset, fromShape: line.originalShape});
     }
   }
   if (polygons.length == 0) {
@@ -420,6 +449,12 @@ async function computeShadow(event) {
       newPath.delete();
     }
     const path = pathBuilder.resolve();
+
+    if (!path) {
+      console.error("Couldn't compute fog");
+      return;
+    }
+
     pathBuilder.delete();
 
     if (path !== undefined) {
