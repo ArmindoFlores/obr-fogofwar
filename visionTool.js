@@ -54,7 +54,7 @@ export function setupContextMenus() {
         icon: "/set-background.svg",
         label: "Set as background image",
         filter: {
-          every: [{ key: "layer", value: "MAP" }, { key: ["metadata", `${ID}/isBackgroundImage`], value: undefined}],
+          every: [{ key: "layer", value: "MAP" }, { key: ["metadata", `${ID}/isBackgroundImage`], value: true, operator: "!="}],
         },
       },
     ],
@@ -62,11 +62,11 @@ export function setupContextMenus() {
       if (ctx.items.length != 1)
         return;
       const item = ctx.items[0];
-      OBR.scene.items.updateItems(() => true, items => {
+      OBR.scene.items.updateItems(item => item.layer == "MAP", items => {
         for (const other_item of items) {
           if (item.id != other_item.id && other_item.metadata[`${ID}/isBackgroundImage`])
             delete other_item.metadata[`${ID}/isBackgroundImage`];
-          else
+          else if (item.id == other_item.id)
             other_item.metadata[`${ID}/isBackgroundImage`] = true;
         }
       });
@@ -482,7 +482,7 @@ async function computeShadow(event) {
 }
 document.addEventListener("updateVision", computeShadow)
 
-var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionEnabled;
+var previousVisionShapes, previousPlayersWithVision, previousSize, previousVisionEnabled, previousMap;
 export async function onSceneDataChange() {
   if (busy)
     return;
@@ -512,14 +512,16 @@ export async function onSceneDataChange() {
   // Check if any values have changed and a re-draw is necessary
   const sVisionShapes = JSON.stringify(visionShapes);
   const sPlayersWithVision = JSON.stringify(playersWithVision);
-  if (visionEnabled == previousVisionEnabled && previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1])
+  const sBackgroundImage = JSON.stringify(backgroundImage);
+  if (sBackgroundImage == previousMap && visionEnabled == previousVisionEnabled && previousVisionShapes == sVisionShapes && previousPlayersWithVision == sPlayersWithVision && size[0] == previousSize[0] && size[1] == previousSize[1])
     return;
 
   // Check if the cache needs to be invalidated
   let invalidateCache = false;
-  if (previousVisionShapes != sVisionShapes || size[0] != previousSize[0] || size[1] != previousSize[1])
+  if (sBackgroundImage != previousMap || previousVisionShapes != sVisionShapes || size[0] != previousSize[0] || size[1] != previousSize[1])
     invalidateCache = true;
 
+  previousMap = sBackgroundImage;
   previousPlayersWithVision = sPlayersWithVision;
   previousVisionShapes = sVisionShapes;
   previousSize = size;
