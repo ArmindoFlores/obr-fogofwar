@@ -249,6 +249,8 @@ async function computeShadow(event) {
     busy = false;
     return;
   }
+
+  const localItems = await OBR.scene.local.getItems();
   
   // Load information from the event
   const {
@@ -275,7 +277,7 @@ async function computeShadow(event) {
   const shouldComputeVision = metadata[`${ID}/visionEnabled`] === true;
   if (!shouldComputeVision || playersWithVision.length == 0) {
     // Clear fog
-    await OBR.scene.items.deleteItems(allItems.filter(isVisionFog).map(fogItem => fogItem.id));
+    await OBR.scene.local.deleteItems(localItems.filter(isVisionFog).map(fogItem => fogItem.id));
     busy = false;
     return;
   }
@@ -491,12 +493,12 @@ async function computeShadow(event) {
   computeTimer.pause(); awaitTimer.resume();
 
   const promisesToExecute = [
-    OBR.scene.items.addItems(itemsToAdd.map(item => {
+    OBR.scene.local.addItems(itemsToAdd.map(item => {
       const path = buildPath().commands(item.cmds).locked(true).visible(item.visible).fillColor("#000000").strokeColor("#000000").layer("FOG").name("Fog of War").metadata({[`${ID}/isVisionFog`]: true}).build();
       path.zIndex = item.zIndex;
       return path;
     })),
-    OBR.scene.items.deleteItems(allItems.filter(isVisionFog).map(fogItem => fogItem.id)),
+    OBR.scene.local.deleteItems(localItems.filter(isVisionFog).map(fogItem => fogItem.id)),
   ];
 
   if (!sceneCache.fog.filled)

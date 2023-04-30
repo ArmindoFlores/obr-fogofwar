@@ -166,8 +166,13 @@ async function initScene()
 // Setup extension add-ons
 OBR.onReady(() => {
   OBR.player.getRole().then(async value => {
-    // But only if user is the GM
-    if (value == "GM") {
+    // Allow the extension to load for any player
+    // This is now needed because each player updates their own
+    // local fog paths.
+    // If you don't wish to show the UI here for players
+    // then the UI should probably be hidden and an
+    // information message displayed
+    if (value == "GM" || value == "PLAYER") {
       setButtonHandler();
       setupContextMenus();
       createTool();
