@@ -1,7 +1,7 @@
 import "./style.css";
 import OBR from "@owlbear-rodeo/sdk";
 import { ID, sceneCache } from './globals';
-import { isBackgroundImage, isPlayerWithVision }  from './itemFilters';
+import { isBackgroundImage, isPlayerWithVision, isVisionFog }  from './itemFilters';
 import { setupContextMenus, createActions, createMode, createTool, onSceneDataChange } from './visionTool';
 
 // Create the extension page
@@ -133,7 +133,7 @@ function updateUI(items)
   }
 }
 
-async function initScene() 
+async function initScene(playerOrGM) 
 {
   let fogFilled, fogColor;
   [sceneCache.items, sceneCache.metadata, sceneCache.gridDpi, sceneCache.gridScale, fogFilled, fogColor] = await Promise.all([
@@ -144,6 +144,8 @@ async function initScene()
     OBR.scene.fog.getFilled(),
     OBR.scene.fog.getColor()
   ]);
+  OBR.scene.items.deleteItems(sceneCache.items.filter(isVisionFog));
+
   sceneCache.gridScale = sceneCache.gridScale.parsed.multiplier;
   sceneCache.fog = {filled: fogFilled, style: {color: fogColor, strokeWidth: 5}};
 
@@ -154,69 +156,73 @@ async function initScene()
     image = images[areas.indexOf(Math.max(...areas))];
   }
 
-  updateUI(sceneCache.items);
+  if (playerOrGM == "GM")  {
+    updateUI(sceneCache.items);
 
-  if (image !== undefined) {
-    await OBR.scene.items.updateItems([image], items => {
-      items[0].metadata[`${ID}/isBackgroundImage`] = true;
-    });
+    if (image !== undefined) {
+      await OBR.scene.items.updateItems([image], items => {
+        items[0].metadata[`${ID}/isBackgroundImage`] = true;
+      });
+    }
   }
 }
 
 // Setup extension add-ons
 OBR.onReady(() => {
   OBR.player.getRole().then(async value => {
-    // But only if user is the GM
+    // Allow the extension to load for any player
+    // This is now needed because each player updates their own
+    // local fog paths.
     if (value == "GM") {
       setButtonHandler();
       setupContextMenus();
       createTool();
       createMode();
       createActions();
+    }
 
-      OBR.scene.fog.onChange(fog => {
-        sceneCache.fog = fog;
-      });
+    OBR.scene.fog.onChange(fog => {
+      sceneCache.fog = fog;
+    });
 
-      OBR.scene.items.onChange(items => {
-        sceneCache.items = items;
-        if (sceneCache.ready) {
-          updateUI(items);
-          onSceneDataChange();
-        }
-      });
-
-      OBR.scene.grid.onChange(grid => {
-        sceneCache.gridDpi = grid.dpi;
-        sceneCache.gridScale = parseInt(grid.scale);
-        if (sceneCache.ready)
-          onSceneDataChange();
-      });
-
-      OBR.scene.onMetadataChange(metadata => {
-        sceneCache.metadata = metadata;
-        if (sceneCache.ready)
-          onSceneDataChange();
-      });
-
-      OBR.scene.onReadyChange(ready => {
-        sceneCache.ready = ready;
-        if (ready) {
-          initScene();
-          onSceneDataChange();
-        }
-        else 
-          updateUI([]);
-      });
-
-      sceneCache.ready = await OBR.scene.isReady();
+    OBR.scene.items.onChange(items => {
+      sceneCache.items = items;
       if (sceneCache.ready) {
-        initScene();
+        if (value == "GM") updateUI(items);
         onSceneDataChange();
       }
-      else
+    });
+
+    OBR.scene.grid.onChange(grid => {
+      sceneCache.gridDpi = grid.dpi;
+      sceneCache.gridScale = parseInt(grid.scale);
+      if (sceneCache.ready)
+        onSceneDataChange();
+    });
+
+    OBR.scene.onMetadataChange(metadata => {
+      sceneCache.metadata = metadata;
+      if (sceneCache.ready)
+        onSceneDataChange();
+    });
+
+    OBR.scene.onReadyChange(ready => {
+      sceneCache.ready = ready;
+      if (ready) {
+        initScene(value);
+        onSceneDataChange();
+      }
+      else if (value == "GM")
         updateUI([]);
+    });
+
+    sceneCache.ready = await OBR.scene.isReady();
+    if (sceneCache.ready) {
+      initScene(value);
+      onSceneDataChange();
     }
+    else if (value == "GM")
+      updateUI([]);
   }
   )
 });
