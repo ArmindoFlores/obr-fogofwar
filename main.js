@@ -1,6 +1,6 @@
 import "./style.css";
 import OBR from "@owlbear-rodeo/sdk";
-import { ID, sceneCache } from './globals';
+import { ID, DEFAULT_VISION_RADIUS, sceneCache } from './globals';
 import { isBackgroundImage, isPlayerWithVision, isVisionFog }  from './itemFilters';
 import { setupContextMenus, createActions, createMode, createTool, onSceneDataChange } from './visionTool';
 
@@ -86,7 +86,7 @@ function updateUI(items)
         name.innerText = player.name;
       if (rangeInput) {
         if (!unlimitedCheckbox.checked)
-          rangeInput.value = player.metadata[`${ID}/visionRange`] ? player.metadata[`${ID}/visionRange`] : 60;
+          rangeInput.value = player.metadata[`${ID}/visionRange`] ? player.metadata[`${ID}/visionRange`] : DEFAULT_VISION_RADIUS;
       }
       if (unlimitedCheckbox) {
         unlimitedCheckbox.checked = !player.metadata[`${ID}/visionRange`];
@@ -101,7 +101,7 @@ function updateUI(items)
       const newTr = document.createElement("tr");
       newTr.id = `tr-${player.id}`;
       newTr.className = "token-table-entry";
-      newTr.innerHTML = `<td class="token-name">${player.name}</td><td><input class="token-vision-range" type="number" value="60"><span class="unit">ft</span></td><td>&nbsp;&nbsp;&infin;&nbsp<input type="checkbox" class="unlimited-vision"></td>`;
+      newTr.innerHTML = `<td class="token-name">${player.name}</td><td><input class="token-vision-range" type="number" value="${DEFAULT_VISION_RADIUS}"><span class="unit">ft</span></td><td>&nbsp;&nbsp;&infin;&nbsp<input type="checkbox" class="unlimited-vision"></td>`;
       table.appendChild(newTr);
       
       // Register event listeners
