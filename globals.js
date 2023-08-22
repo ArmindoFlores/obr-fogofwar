@@ -1,4 +1,5 @@
 const ID = "com.armindoflores.fogofwar";
+const DEFAULT_VISION_RADIUS = 30
 
 class SceneCash {
     constructor() {
@@ -11,5 +12,5 @@ class SceneCash {
     }
 };
 
-export { ID };
+export { ID, DEFAULT_VISION_RADIUS };
 export const sceneCache = new SceneCash();
