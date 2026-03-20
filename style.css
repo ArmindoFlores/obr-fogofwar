@@ -158,3 +158,17 @@ li > p {
   margin: 0;
   padding: 0;
 }
+
+.warning {
+  display: flex;
+  flex-direction: row;
+  gap: .5em;
+  background-color: #2f2f2f;
+  padding: 0.25rem 1rem;
+  border-left: 2px solid yellow;
+  font-size: 0.75rem;
+
+  img {
+    width: 1.5em;
+  }
+}

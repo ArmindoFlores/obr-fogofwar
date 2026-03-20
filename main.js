@@ -1,8 +1,10 @@
 import "./style.css";
-import OBR from "@owlbear-rodeo/sdk";
+
 import { ID, sceneCache } from './globals';
+import { createActions, createMode, createTool, onSceneDataChange, setupContextMenus } from './visionTool';
 import { isBackgroundImage, isPlayerWithVision, isVisionFog }  from './itemFilters';
-import { setupContextMenus, createActions, createMode, createTool, onSceneDataChange } from './visionTool';
+
+import OBR from "@owlbear-rodeo/sdk";
 
 // Create the extension page
 const app = document.querySelector('#app');
@@ -10,6 +12,10 @@ app.style.textAlign = "left";
 app.parentElement.style.placeItems = "start";
 app.innerHTML = `
   <div>
+    <div class="warning">
+      <img src="warning.svg">
+      <p>Warning: The "Dynamic Fog of War" extension has been deprecated and will stop working on the 1<sup>st</sup> of January, 2027. <a href="/deprecation.html">Click here</a> for more info.</p>
+    </div>
     <div>
       <h1 style="display: inline-block; font-size: 2.2em;">Dynamic Fog&nbsp;&nbsp;</h1><input type="checkbox" id="vision_checkbox" class="large">
     </div>
@@ -168,7 +174,7 @@ async function initScene(playerOrGM)
 }
 
 // Setup extension add-ons
-OBR.onReady(() => {
+OBR.onReady(() => {  
   OBR.player.getRole().then(async value => {
     // Allow the extension to load for any player
     // This is now needed because each player updates their own
